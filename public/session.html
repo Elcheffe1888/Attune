@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attune — Guided questions</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .session-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .session-main {
+      flex: 1;
+      padding: 2.5rem 1.5rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .session-content {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .situation-context {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-light);
+      margin-bottom: 1.25rem;
+    }
+
+    .situation-setup {
+      font-size: 1.15rem;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: 2rem;
+    }
+
+    .options-list {
+      margin-bottom: 1.5rem;
+    }
+
+    .option-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .option-letter {
+      flex-shrink: 0;
+      width: 1.4rem;
+      height: 1.4rem;
+      border-radius: 50%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+      transition: all 0.15s;
+    }
+
+    .option:hover .option-letter {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .option--correct .option-letter {
+      background: var(--success);
+      color: #fff;
+      border-color: var(--success);
+    }
+
+    .option--incorrect .option-letter {
+      background: var(--error);
+      color: #fff;
+      border-color: var(--error);
+    }
+
+    .option-text {
+      flex: 1;
+      line-height: 1.5;
+    }
+
+    .feedback-section {
+      margin-bottom: 1rem;
+    }
+
+    .feedback-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+    }
+
+    .feedback-text {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    .next-btn-row {
+      margin-top: 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Empty / loading states */
+    .state-message {
+      text-align: center;
+      padding: 4rem 1.5rem;
+    }
+
+    .state-message h2 {
+      margin-bottom: 0.75rem;
+    }
+
+    .state-message p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Session complete */
+    .session-complete {
+      text-align: center;
+      padding: 3rem 0;
+    }
+
+    .session-complete__icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .session-complete h2 {
+      margin-bottom: 0.75rem;
+    }
+
+    .session-complete p {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .session-complete__actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="site-header__inner">
+    <a href="/session.html" class="wordmark">
+      <span class="wordmark__name">Attune</span>
+      <span class="wordmark__sub">Learn to live well</span>
+    </a>
+    <nav class="site-nav">
+      <a href="/session.html" class="nav-link nav-link--active">Questions</a>
+      <a href="/stories.html" class="nav-link">Stories</a>
+      <a href="/dialogue.html" class="nav-link">Think it through</a>
+      <a href="/path.html" class="nav-link">Your path</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="session-main">
+  <div class="session-content">
+
+    <!-- Loading -->
+    <div id="state-loading" class="state-message fade-in">
+      <div class="spinner" style="margin: 0 auto 1rem;"></div>
+      <p class="text-muted">Getting your next situations…</p>
+    </div>
+
+    <!-- Error -->
+    <div id="state-error" class="state-message hidden">
+      <h2>Something went wrong</h2>
+      <p>We couldn't load your session. Try refreshing.</p>
+      <button class="btn btn--primary" onclick="loadSession()">Try again</button>
+    </div>
+
+    <!-- Situation -->
+    <div id="state-situation" class="hidden fade-in">
+      <div class="progress-bar">
+        <div class="progress-bar__fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <div class="situation-context" id="situation-context"></div>
+      <div class="situation-setup" id="situation-setup"></div>
+      <div class="options-list" id="options-list"></div>
+      <div class="feedback card hidden" id="feedback-panel"></div>
+      <div class="next-btn-row hidden" id="next-row">
+        <span class="text-muted text-small" id="session-counter"></span>
+        <button class="btn btn--primary" id="next-btn" onclick="nextSituation()">Next</button>
+      </div>
+    </div>
+
+    <!-- Session complete -->
+    <div id="state-complete" class="session-complete hidden fade-in">
+      <div class="session-complete__icon">◎</div>
+      <h2>That's a session.</h2>
+      <p>You worked through something real today. Come back tomorrow — there's more where that came from.</p>
+      <div class="session-complete__actions">
+        <a href="/stories.html" class="btn btn--secondary">Read a story</a>
+        <a href="/dialogue.html" class="btn btn--secondary">Think something through</a>
+        <a href="/path.html" class="btn btn--primary">See your path</a>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  let queue = [];
+  let sessionId = null;
+  let currentIndex = 0;
+  let answered = false;
+
+  // ── Load session ───────────────────────────────────────────────────────
+  async function loadSession() {
+    showState('loading');
+    try {
+      const res = await fetch('/api/situations/queue');
+      if (res.status === 401) {
+        window.location.href = '/';
+        return;
+      }
+      const data = await res.json();
+      if (!data.queue || data.queue.length === 0) {
+        showState('complete');
+        return;
+      }
+      queue = data.queue;
+      sessionId = data.sessionId;
+      currentIndex = 0;
+      renderSituation();
+    } catch (err) {
+      showState('error');
+    }
+  }
+
+  // ── Render current situation ───────────────────────────────────────────
+  function renderSituation() {
+    if (currentIndex >= queue.length) {
+      endSession();
+      return;
+    }
+
+    answered = false;
+    const sit = queue[currentIndex];
+    const progress = Math.round((currentIndex / queue.length) * 100);
+
+    document.getElementById('progress-fill').style.width = progress + '%';
+    document.getElementById('situation-context').textContent = sit.context || '';
+    document.getElementById('situation-setup').textContent = sit.setup;
+    document.getElementById('session-counter').textContent =
+      `${currentIndex + 1} of ${queue.length}`;
+
+    // Render options
+    const optionsList = document.getElementById('options-list');
+    optionsList.innerHTML = '';
+    const letters = ['A', 'B', 'C', 'D'];
+    letters.forEach(letter => {
+      if (!sit.options[letter]) return;
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.dataset.letter = letter;
+      btn.innerHTML = `
+        <span class="option-label">
+          <span class="option-letter">${letter}</span>
+          <span class="option-text">${sit.options[letter]}</span>
+        </span>`;
+      btn.addEventListener('click', () => selectOption(letter, sit));
+      optionsList.appendChild(btn);
+    });
+
+    // Hide feedback and next
+    document.getElementById('feedback-panel').classList.add('hidden');
+    document.getElementById('next-row').classList.add('hidden');
+
+    showState('situation');
+  }
+
+  // ── Handle option selection ────────────────────────────────────────────
+  async function selectOption(chosen, sit) {
+    if (answered) return;
+    answered = true;
+
+    const startTime = Date.now();
+
+    // Determine correctness
+    const correctAnswers = Array.isArray(sit.correct)
+      ? sit.correct
+      : [sit.correct];
+    const isCorrect = correctAnswers.includes(chosen);
+
+    // Style options
+    const allOptions = document.querySelectorAll('.option');
+    allOptions.forEach(btn => {
+      btn.disabled = true;
+      const letter = btn.dataset.letter;
+      if (correctAnswers.includes(letter)) {
+        btn.classList.add('option--correct');
+      } else if (letter === chosen && !isCorrect) {
+        btn.classList.add('option--incorrect');
+      }
+    });
+
+    // Show feedback
+    renderFeedback(sit, chosen, isCorrect);
+
+    // Record response
+    const responseTimeMs = Date.now() - startTime;
+    try {
+      await fetch('/api/situations/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          situationId: sit.id,
+          kcId: sit.kcId,
+          correct: isCorrect,
+          distractorChosen: isCorrect ? null : chosen,
+          responseTimeMs,
+        }),
+      });
+    } catch {}
+
+    document.getElementById('next-row').classList.remove('hidden');
+  }
+
+  // ── Render feedback ────────────────────────────────────────────────────
+  function renderFeedback(sit, chosen, isCorrect) {
+    const fb = sit.feedback;
+    const panel = document.getElementById('feedback-panel');
+
+    let html = '';
+
+    // Distractor-specific feedback if wrong
+    if (!isCorrect && fb.distractors && fb.distractors[chosen]) {
+      html += `
+        <div class="feedback-section">
+          <div class="feedback-label">What that option misses</div>
+          <div class="feedback-text">${fb.distractors[chosen]}</div>
+        </div>`;
+    }
+
+    html += `
+      <div class="feedback-section">
+        <div class="feedback-label">What was actually happening</div>
+        <div class="feedback-text">${fb.whatWasHappening}</div>
+      </div>
+      <div class="feedback-section">
+        <div class="feedback-label">Why ${Array.isArray(sit.correct) ? sit.correct.join(' or ') : sit.correct}</div>
+        <div class="feedback-text">${fb.whyCorrect}</div>
+      </div>
+      <div class="feedback-section">
+        <div class="feedback-label">What this produces over time</div>
+        <div class="feedback-text">${fb.producesOverTime}</div>
+      </div>`;
+
+    panel.innerHTML = html;
+    panel.classList.remove('hidden');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ── Next situation ─────────────────────────────────────────────────────
+  function nextSituation() {
+    currentIndex++;
+    if (currentIndex >= queue.length) {
+      endSession();
+    } else {
+      renderSituation();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  // ── End session ────────────────────────────────────────────────────────
+  async function endSession() {
+    try {
+      await fetch('/api/situations/end-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+    } catch {}
+    showState('complete');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── Show state ─────────────────────────────────────────────────────────
+  function showState(state) {
+    ['loading','error','situation','complete'].forEach(s => {
+      document.getElementById(`state-${s}`).classList.toggle('hidden', s !== state);
+    });
+    if (state === 'situation') {
+      document.getElementById('state-situation').classList.add('fade-in');
+    }
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────
+  loadSession();
+</script>
+
+</body>
+</html>
