@@ -31,6 +31,13 @@ router.post('/register', async (req, res) => {
     const userId = result.rows[0].id;
     req.session.userId = userId;
 
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
     return res.status(201).json({ ok: true, userId });
   } catch (err) {
     console.error('Register error:', err);
