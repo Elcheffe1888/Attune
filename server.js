@@ -71,11 +71,7 @@ app.use('/api/stories', storiesRouter);
 app.use('/api/dialogue', dialogueRouter);
 app.use('/api/progress', progressRouter);
 
-// ── HTML routes ────────────────────────────────────────────────────────────
-// All navigation is handled client-side via fetch + HTML files.
-// Express serves index.html for the root; all other pages are direct file references.
-// Unknown routes fall through to 404.
-
+// ── Root ───────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
