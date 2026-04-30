@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attune — Learn to live well</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .entry-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+    }
+
+    .entry-logo {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .entry-logo__name {
+      font-size: 3rem;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .entry-logo__sub {
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+    }
+
+    .entry-card {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    /* Auth tabs */
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.75rem;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      font-family: var(--font);
+      font-size: 1rem;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.15s;
+      margin-bottom: -1px;
+    }
+
+    .auth-tab--active {
+      color: var(--text);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Onboarding screens */
+    .onboarding {
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .onboarding__question {
+      font-size: 1.5rem;
+      font-weight: 400;
+      line-height: 1.4;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+
+    .onboarding__hint {
+      font-size: 0.9rem;
+      font-style: italic;
+      color: var(--text-muted);
+      margin-bottom: 1.75rem;
+    }
+
+    .onboarding__textarea {
+      width: 100%;
+      font-family: var(--font);
+      font-size: 1rem;
+      line-height: 1.6;
+      padding: 0.8rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius);
+      color: var(--text);
+      resize: vertical;
+      min-height: 100px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .onboarding__textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(74,124,142,0.12);
+    }
+
+    .onboarding__step {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-light);
+      margin-bottom: 1rem;
+    }
+
+    .reflection-card {
+      background: var(--accent-light);
+      border: 1px solid rgba(74,124,142,0.2);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    .reflection-card__label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .screen { display: none; }
+    .screen--active { display: block; }
+
+    .entry-footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      color: var(--text-light);
+    }
+  </style>
+</head>
+<body>
+
+<div class="entry-page">
+
+  <div class="entry-logo">
+    <div class="entry-logo__name">Attune</div>
+    <div class="entry-logo__sub">Learn to live well</div>
+  </div>
+
+  <!-- ── AUTH SCREENS ─────────────────────────────────────────────────── -->
+  <div class="entry-card card card--elevated" id="auth-panel">
+
+    <div class="auth-tabs">
+      <button class="auth-tab auth-tab--active" id="tab-login" onclick="showTab('login')">Sign in</button>
+      <button class="auth-tab" id="tab-register" onclick="showTab('register')">Create account</button>
+    </div>
+
+    <!-- Login -->
+    <div id="form-login">
+      <div id="login-error" class="alert alert--error hidden"></div>
+      <div class="form-group">
+        <label class="form-label" for="login-email">Email</label>
+        <input class="form-input" type="email" id="login-email" autocomplete="email" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="login-password">Password</label>
+        <input class="form-input" type="password" id="login-password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button class="btn btn--primary btn--full btn--lg mt-2" onclick="login()">Sign in</button>
+    </div>
+
+    <!-- Register -->
+    <div id="form-register" class="hidden">
+      <div id="register-error" class="alert alert--error hidden"></div>
+      <div class="form-group">
+        <label class="form-label" for="reg-email">Email</label>
+        <input class="form-input" type="email" id="reg-email" autocomplete="email" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="reg-password">Password</label>
+        <input class="form-input" type="password" id="reg-password" autocomplete="new-password" placeholder="At least 8 characters">
+      </div>
+      <button class="btn btn--primary btn--full btn--lg mt-2" onclick="register()">Create account</button>
+    </div>
+
+  </div>
+
+  <!-- ── ONBOARDING SCREENS ────────────────────────────────────────────── -->
+  <div class="onboarding hidden" id="onboarding-panel">
+
+    <!-- Step 1 -->
+    <div class="screen screen--active" id="step-1">
+      <div class="onboarding__step">To begin</div>
+      <div class="onboarding__question">Has there ever been a moment where you knew what you should do — and didn't do it?</div>
+      <div class="onboarding__hint">Take a minute. Something real — even something small.</div>
+      <textarea class="onboarding__textarea" id="answer-1" placeholder="What comes to mind?" maxlength="600"></textarea>
+      <div class="mt-3">
+        <button class="btn btn--primary btn--lg" onclick="nextStep(1)">Continue</button>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="screen" id="step-2">
+      <div class="onboarding__step">And then</div>
+      <div class="onboarding__question" id="q2-text">What made it hard to do the thing you knew you should do?</div>
+      <div class="onboarding__hint">There's usually something real there — not just an excuse.</div>
+      <textarea class="onboarding__textarea" id="answer-2" placeholder="What was pulling you the other way?" maxlength="600"></textarea>
+      <div class="mt-3">
+        <button class="btn btn--primary btn--lg" onclick="nextStep(2)">Continue</button>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="screen" id="step-3">
+      <div class="onboarding__step">One more</div>
+      <div class="onboarding__question">Looking back — what do you wish you'd done differently?</div>
+      <div class="onboarding__hint">Or if you'd do the same thing, what makes you confident in that?</div>
+      <textarea class="onboarding__textarea" id="answer-3" placeholder="What do you actually think now?" maxlength="600"></textarea>
+      <div class="mt-3">
+        <button class="btn btn--primary btn--lg" onclick="finishOnboarding()">
+          <span id="finish-btn-text">See what this is about</span>
+          <span id="finish-spinner" class="spinner hidden"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Reflection -->
+    <div class="screen" id="step-reflection">
+      <div class="onboarding__step">Before you start</div>
+      <div class="reflection-card" id="reflection-text">
+        <div class="reflection-card__label">What you just did</div>
+        <div id="reflection-body"></div>
+      </div>
+      <p class="text-muted" style="font-size:0.95rem; margin-bottom:1.5rem;">
+        Attune gives you situations drawn from everyday life — the kind where there's a real cost to doing the right thing. You work through them, get specific feedback, and build something real over time.
+      </p>
+      <button class="btn btn--primary btn--lg" onclick="enterPlatform()">Start</button>
+    </div>
+
+  </div>
+
+  <div class="entry-footer" id="entry-footer">
+    No ads. No data sold. Your thinking stays yours.
+  </div>
+
+</div>
+
+<script>
+  // ── Tab switching ─────────────────────────────────────────────────────
+  function showTab(tab) {
+    const isLogin = tab === 'login';
+    document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+    document.getElementById('form-register').classList.toggle('hidden', isLogin);
+    document.getElementById('tab-login').classList.toggle('auth-tab--active', isLogin);
+    document.getElementById('tab-register').classList.toggle('auth-tab--active', !isLogin);
+  }
+
+  // ── Auth ──────────────────────────────────────────────────────────────
+  async function login() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.classList.add('hidden');
+
+    if (!email || !password) {
+      showError(errEl, 'Please enter your email and password.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showError(errEl, data.error || 'Login failed.');
+        return;
+      }
+      // Returning user — go straight to session
+      window.location.href = '/session.html';
+    } catch (err) {
+      showError(errEl, 'Something went wrong. Please try again.');
+    }
+  }
+
+  async function register() {
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const errEl = document.getElementById('register-error');
+    errEl.classList.add('hidden');
+
+    if (!email || !password) {
+      showError(errEl, 'Please enter your email and password.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showError(errEl, data.error || 'Registration failed.');
+        return;
+      }
+      // New user — show onboarding
+      showOnboarding();
+    } catch (err) {
+      showError(errEl, 'Something went wrong. Please try again.');
+    }
+  }
+
+  function showError(el, msg) {
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  // ── Onboarding ────────────────────────────────────────────────────────
+  function showOnboarding() {
+    document.getElementById('auth-panel').classList.add('hidden');
+    document.getElementById('onboarding-panel').classList.remove('hidden');
+    document.getElementById('entry-footer').classList.add('hidden');
+  }
+
+  function nextStep(current) {
+    const answer = document.getElementById(`answer-${current}`).value.trim();
+    if (!answer) {
+      document.getElementById(`answer-${current}`).focus();
+      return;
+    }
+    document.getElementById(`step-${current}`).classList.remove('screen--active');
+    document.getElementById(`step-${current + 1}`).classList.add('screen--active');
+    document.getElementById(`answer-${current + 1}`)?.focus();
+  }
+
+  async function finishOnboarding() {
+    const answer3 = document.getElementById('answer-3').value.trim();
+    if (!answer3) {
+      document.getElementById('answer-3').focus();
+      return;
+    }
+
+    const btn = document.getElementById('finish-btn-text');
+    const spinner = document.getElementById('finish-spinner');
+    btn.classList.add('hidden');
+    spinner.classList.remove('hidden');
+
+    const a1 = document.getElementById('answer-1').value.trim();
+    const a2 = document.getElementById('answer-2').value.trim();
+    const a3 = answer3;
+
+    // Generate a brief reflection via the Think it through endpoint
+    // We send all three answers as a single message and ask for a short reflection
+    try {
+      const res = await fetch('/api/dialogue/think', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entryPoint: 'onboarding',
+          messages: [{
+            role: 'user',
+            content: `Here's what someone shared as they started:\n\n"${a1}"\n\nWhat made it hard: "${a2}"\n\nLooking back: "${a3}"\n\nIn two or three sentences, reflect back what they just noticed about themselves — warmly, specifically, without moralizing. Don't name virtues. Don't give advice. Just name what they actually worked out.`
+          }]
+        }),
+      });
+      const data = await res.json();
+      document.getElementById('reflection-body').textContent = data.reply || 'You just described something real. That\'s a good place to start.';
+    } catch {
+      document.getElementById('reflection-body').textContent = 'You just described something real. That\'s a good place to start.';
+    }
+
+    btn.classList.remove('hidden');
+    spinner.classList.add('hidden');
+
+    document.getElementById('step-3').classList.remove('screen--active');
+    document.getElementById('step-reflection').classList.add('screen--active');
+  }
+
+  function enterPlatform() {
+    window.location.href = '/session.html';
+  }
+
+  // ── Check if already logged in ────────────────────────────────────────
+  (async function checkAuth() {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (data.authenticated) {
+        window.location.href = '/session.html';
+      }
+    } catch {}
+  })();
+
+  // ── Enter key support ─────────────────────────────────────────────────
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.target.id === 'login-password') login();
+    if (e.key === 'Enter' && e.target.id === 'reg-password') register();
+  });
+</script>
+
+</body>
+</html>
