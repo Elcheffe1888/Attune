@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attune — Story</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .story-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .story-main {
+      flex: 1;
+      padding: 2.5rem 1.5rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .story-content {
+      width: 100%;
+      max-width: 620px;
+    }
+
+    .story-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-bottom: 2rem;
+    }
+
+    .story-back:hover { color: var(--accent); text-decoration: none; }
+
+    .story-domain {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-light);
+      margin-bottom: 0.6rem;
+    }
+
+    .story-name {
+      font-size: 2rem;
+      font-weight: 500;
+      line-height: 1.2;
+      margin-bottom: 0.4rem;
+    }
+
+    .story-context {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 2rem;
+    }
+
+    .story-section {
+      margin-bottom: 1.75rem;
+    }
+
+    .story-section__label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .story-section__text {
+      font-size: 1rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+
+    .story-pullquote {
+      margin: 2rem 0;
+      padding: 1.25rem 1.5rem;
+      border-left: 3px solid var(--accent);
+      background: var(--accent-light);
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    .story-pullquote__text {
+      font-size: 1.15rem;
+      line-height: 1.6;
+      font-style: italic;
+      color: var(--text);
+    }
+
+    .story-unpack {
+      background: var(--surface-2);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .story-unpack__label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.6rem;
+    }
+
+    .story-unpack__question {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: 1.25rem;
+    }
+
+    .story-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body class="story-page">
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a href="/session.html" class="wordmark">
+      <span class="wordmark__name">Attune</span>
+      <span class="wordmark__sub">Learn to live well</span>
+    </a>
+    <nav class="site-nav">
+      <a href="/session.html" class="nav-link">Questions</a>
+      <a href="/stories.html" class="nav-link nav-link--active">Stories</a>
+      <a href="/dialogue.html" class="nav-link">Think it through</a>
+      <a href="/path.html" class="nav-link">Your path</a>
+    </nav>
+  </div>
+</header>
+
+<main class="story-main">
+  <div class="story-content">
+
+    <div id="state-loading" class="text-center mt-4">
+      <div class="spinner" style="margin: 0 auto;"></div>
+    </div>
+
+    <div id="state-story" class="hidden fade-in">
+      <a href="/stories.html" class="story-back">← All stories</a>
+
+      <div class="story-domain" id="story-domain"></div>
+      <h1 class="story-name" id="story-name"></h1>
+      <div class="story-context" id="story-context"></div>
+
+      <div class="story-section">
+        <div class="story-section__label">The situation</div>
+        <div class="story-section__text" id="story-situation"></div>
+      </div>
+
+      <div class="story-section">
+        <div class="story-section__label">What they did</div>
+        <div class="story-section__text" id="story-what-they-did"></div>
+      </div>
+
+      <div class="story-pullquote">
+        <div class="story-pullquote__text" id="story-pullquote"></div>
+      </div>
+
+      <div class="story-unpack">
+        <div class="story-unpack__label">Think about it</div>
+        <div class="story-unpack__question" id="story-unpack"></div>
+        <button class="btn btn--primary" onclick="thinkItThrough()">Think it through</button>
+      </div>
+
+      <div class="story-actions">
+        <a href="/stories.html" class="btn btn--secondary">More stories</a>
+        <a href="/session.html" class="btn btn--secondary">Back to questions</a>
+      </div>
+    </div>
+
+    <div id="state-error" class="hidden text-center mt-4">
+      <p class="text-muted">Story not found.</p>
+      <a href="/stories.html" class="btn btn--secondary mt-2">Back to stories</a>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  const DOMAIN_LABELS = {
+    H: 'Honesty', Co: 'Courage', Fa: 'Fairness',
+    Re: 'Restraint', Hu: 'Humility', Ca: 'Care for others'
+  };
+
+  const storyId = new URLSearchParams(window.location.search).get('id');
+
+  async function loadStory() {
+    if (!storyId) { showState('error'); return; }
+
+    try {
+      const res = await fetch(`/api/stories/${storyId}`);
+      if (res.status === 401) { window.location.href = '/'; return; }
+      if (!res.ok) { showState('error'); return; }
+
+      const data = await res.json();
+      const s = data.story;
+
+      document.title = `Attune — ${s.personName}`;
+      document.getElementById('story-domain').textContent = DOMAIN_LABELS[s.domain] || s.domain;
+      document.getElementById('story-name').textContent = s.personName;
+      document.getElementById('story-context').textContent = s.context;
+      document.getElementById('story-situation').textContent = s.situation;
+      document.getElementById('story-what-they-did').textContent = s.whatTheyDid;
+      document.getElementById('story-pullquote').textContent = `"${s.pullQuote}"`;
+      document.getElementById('story-unpack').textContent = s.unpackPrompt;
+
+      showState('story');
+
+      // Mark as read
+      fetch(`/api/stories/${storyId}/read`, { method: 'POST' }).catch(() => {});
+    } catch (err) {
+      showState('error');
+    }
+  }
+
+  function showState(state) {
+    ['loading','story','error'].forEach(s => {
+      document.getElementById(`state-${s}`).classList.toggle('hidden', s !== state);
+    });
+  }
+
+  function thinkItThrough() {
+    window.location.href = '/dialogue.html?from=story&storyId=' + storyId;
+  }
+
+  loadStory();
+</script>
+
+</body>
+</html>
