@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attune — Your path</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .path-main {
+      flex: 1;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .path-content {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .path-header {
+      margin-bottom: 2.5rem;
+    }
+
+    .path-header h1 {
+      font-size: 1.9rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .path-header p {
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 0.95rem;
+    }
+
+    /* Domain grid */
+    .domain-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .domain-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+    }
+
+    .domain-card__name {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 0.6rem;
+      color: var(--text);
+    }
+
+    .domain-level {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .domain-level__label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-light);
+      width: 1.5rem;
+    }
+
+    .domain-level__state {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+    }
+
+    .domain-level__state--not_started { color: var(--text-light); }
+    .domain-level__state--building { color: var(--accent); }
+    .domain-level__state--solid { color: var(--success); }
+
+    .level-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .level-dot--not_started { background: var(--border-dark); }
+    .level-dot--building { background: var(--accent); }
+    .level-dot--solid { background: var(--success); }
+
+    .domain-level__locked {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      font-style: italic;
+    }
+
+    /* Pattern messages */
+    .patterns-section {
+      margin-bottom: 2.5rem;
+    }
+
+    .patterns-section__title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-light);
+      margin-bottom: 0.75rem;
+    }
+
+    .pattern-message {
+      background: var(--surface-2);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 0.9rem 1.1rem;
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+
+    /* Recommendations */
+    .recs-section {
+      margin-bottom: 2.5rem;
+    }
+
+    .recs-section__title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-light);
+      margin-bottom: 0.75rem;
+    }
+
+    .rec-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1.1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 0.6rem;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+
+    .rec-item:hover {
+      border-color: var(--accent);
+      background: var(--accent-light);
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .rec-item__text {
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .rec-item__arrow {
+      margin-left: auto;
+      color: var(--text-light);
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    /* Stats */
+    .stats-row {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat__number {
+      font-size: 1.6rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat__label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 0;
+      color: var(--text-muted);
+    }
+
+    .empty-state p {
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 500px) {
+      .domain-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body style="min-height:100vh;display:flex;flex-direction:column;">
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a href="/session.html" class="wordmark">
+      <span class="wordmark__name">Attune</span>
+      <span class="wordmark__sub">Learn to live well</span>
+    </a>
+    <nav class="site-nav">
+      <a href="/session.html" class="nav-link">Questions</a>
+      <a href="/stories.html" class="nav-link">Stories</a>
+      <a href="/dialogue.html" class="nav-link">Think it through</a>
+      <a href="/path.html" class="nav-link nav-link--active">Your path</a>
+    </nav>
+  </div>
+</header>
+
+<main class="path-main">
+  <div class="path-content">
+
+    <div class="path-header">
+      <h1>Your path</h1>
+      <p>Where you are, and what's worth doing next.</p>
+    </div>
+
+    <!-- Loading -->
+    <div id="state-loading" class="text-center mt-4">
+      <div class="spinner" style="margin: 0 auto;"></div>
+    </div>
+
+    <!-- Empty state (< 3 interactions) -->
+    <div id="state-empty" class="empty-state hidden">
+      <p>Your path shows here as you go.<br>Complete a few situations and come back.</p>
+      <a href="/session.html" class="btn btn--primary">Start a session</a>
+    </div>
+
+    <!-- Main content -->
+    <div id="state-content" class="hidden fade-in">
+
+      <!-- Stats -->
+      <div class="stats-row" id="stats-row"></div>
+
+      <!-- Domain grid -->
+      <div class="domain-grid" id="domain-grid"></div>
+
+      <!-- Pattern messages -->
+      <div class="patterns-section" id="patterns-section" style="display:none">
+        <div class="patterns-section__title">What we're noticing</div>
+        <div id="patterns-list"></div>
+      </div>
+
+      <!-- Recommendations -->
+      <div class="recs-section" id="recs-section" style="display:none">
+        <div class="recs-section__title">What's worth doing next</div>
+        <div id="recs-list"></div>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<script>
+  const DOMAIN_LABELS = {
+    H: 'Honesty', Co: 'Courage', Fa: 'Fairness',
+    Re: 'Restraint', Hu: 'Humility', Ca: 'Care for others'
+  };
+
+  async function loadPath() {
+    try {
+      const res = await fetch('/api/progress');
+      if (res.status === 401) { window.location.href = '/'; return; }
+      const data = await res.json();
+
+      document.getElementById('state-loading').classList.add('hidden');
+
+      if (data.totalInteractions < 3) {
+        document.getElementById('state-empty').classList.remove('hidden');
+        return;
+      }
+
+      renderContent(data);
+      document.getElementById('state-content').classList.remove('hidden');
+    } catch (err) {
+      document.getElementById('state-loading').innerHTML =
+        '<p class="text-muted">Could not load your path. Try refreshing.</p>';
+    }
+  }
+
+  function renderContent(data) {
+    // Stats
+    const statsRow = document.getElementById('stats-row');
+    statsRow.innerHTML = `
+      <div class="stat">
+        <div class="stat__number">${data.totalInteractions}</div>
+        <div class="stat__label">situations worked through</div>
+      </div>
+      <div class="stat">
+        <div class="stat__number">${data.storiesRead}</div>
+        <div class="stat__label">stories read</div>
+      </div>
+      ${data.titCompleted > 0 ? `
+      <div class="stat">
+        <div class="stat__number">${data.titCompleted}</div>
+        <div class="stat__label">conversations completed</div>
+      </div>` : ''}
+    `;
+
+    // Domain grid
+    const grid = document.getElementById('domain-grid');
+    grid.innerHTML = '';
+    data.domains.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'domain-card';
+
+      const l2Html = d.l2 ? `
+        <div class="domain-level">
+          <span class="domain-level__label">L2</span>
+          <span class="domain-level__state domain-level__state--${d.l2.state}">
+            <span class="level-dot level-dot--${d.l2.state}"></span>
+            ${d.l2.label}
+          </span>
+        </div>` : (d.l1.state === 'solid' ? '' : `
+        <div class="domain-level">
+          <span class="domain-level__label">L2</span>
+          <span class="domain-level__locked">unlocks when L1 is solid</span>
+        </div>`);
+
+      card.innerHTML = `
+        <div class="domain-card__name">${DOMAIN_LABELS[d.domain]}</div>
+        <div class="domain-level">
+          <span class="domain-level__label">L1</span>
+          <span class="domain-level__state domain-level__state--${d.l1.state}">
+            <span class="level-dot level-dot--${d.l1.state}"></span>
+            ${d.l1.label}
+          </span>
+        </div>
+        ${l2Html}
+      `;
+      grid.appendChild(card);
+    });
+
+    // Pattern messages
+    if (data.patterns && data.patterns.length > 0) {
+      const pSection = document.getElementById('patterns-section');
+      pSection.style.display = 'block';
+      const pList = document.getElementById('patterns-list');
+      pList.innerHTML = data.patterns.map(p =>
+        `<div class="pattern-message">${p.text}</div>`
+      ).join('');
+    }
+
+    // Recommendations
+    if (data.recommendations && data.recommendations.length > 0) {
+      const rSection = document.getElementById('recs-section');
+      rSection.style.display = 'block';
+      const rList = document.getElementById('recs-list');
+      rList.innerHTML = data.recommendations.map(rec => {
+        const href = recHref(rec);
+        return `<a href="${href}" class="rec-item">
+          <span class="rec-item__text">${rec.copy}</span>
+          <span class="rec-item__arrow">→</span>
+        </a>`;
+      }).join('');
+    }
+  }
+
+  function recHref(rec) {
+    switch (rec.type) {
+      case 'l3_dialogue': return `/dialogue.html?l3=${rec.conflictPairId}`;
+      case 'story': return `/story.html?id=${rec.storyId}`;
+      case 'think_it_through': return '/dialogue.html';
+      case 'situation_practice':
+      case 'domain_exploration':
+      default: return '/session.html';
+    }
+  }
+
+  loadPath();
+</script>
+
+</body>
+</html>
