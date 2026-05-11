@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attune — Think it through</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .dialogue-main {
+      flex: 1;
+      padding: 2.5rem 1.5rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .dialogue-content {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    /* Entry state */
+    .dialogue-entry h2 {
+      font-size: 1.6rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .dialogue-entry p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.7;
+    }
+
+    .entry-textarea {
+      width: 100%;
+      font-family: var(--font);
+      font-size: 1rem;
+      line-height: 1.7;
+      padding: 0.9rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius);
+      color: var(--text);
+      resize: vertical;
+      min-height: 120px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      margin-bottom: 1rem;
+    }
+
+    .entry-textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(74,124,142,0.12);
+    }
+
+    /* Chat interface */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 140px);
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .message {
+      max-width: 85%;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .message--user {
+      align-self: flex-end;
+    }
+
+    .message--assistant {
+      align-self: flex-start;
+    }
+
+    .message__bubble {
+      padding: 0.8rem 1.1rem;
+      border-radius: var(--radius-lg);
+      font-size: 0.95rem;
+      line-height: 1.65;
+    }
+
+    .message--user .message__bubble {
+      background: var(--accent);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message--assistant .message__bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 0.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      margin-top: 1rem;
+    }
+
+    .chat-input {
+      flex: 1;
+      font-family: var(--font);
+      font-size: 0.95rem;
+      padding: 0.65rem 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius);
+      color: var(--text);
+      outline: none;
+      resize: none;
+      min-height: 42px;
+      max-height: 120px;
+      transition: border-color 0.15s;
+    }
+
+    .chat-input:focus {
+      border-color: var(--accent);
+    }
+
+    .send-btn {
+      flex-shrink: 0;
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius);
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      font-size: 1rem;
+    }
+
+    .send-btn:hover { background: var(--accent-dark); }
+    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .chat-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.75rem;
+    }
+
+    .chat-footer__note {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      font-style: italic;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      padding: 0.8rem 1.1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      border-bottom-left-radius: 4px;
+      width: fit-content;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--text-light);
+      border-radius: 50%;
+      animation: typingDot 1.2s infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingDot {
+      0%, 60%, 100% { opacity: 0.3; transform: scale(1); }
+      30% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* End session */
+    .end-btn {
+      font-size: 0.82rem;
+      color: var(--text-light);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font);
+      padding: 0.2rem 0;
+      text-decoration: underline;
+      text-decoration-color: transparent;
+      transition: color 0.15s, text-decoration-color 0.15s;
+    }
+
+    .end-btn:hover {
+      color: var(--text-muted);
+      text-decoration-color: var(--text-muted);
+    }
+  </style>
+</head>
+<body style="min-height:100vh;display:flex;flex-direction:column;">
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a href="/session.html" class="wordmark">
+      <span class="wordmark__name">Attune</span>
+      <span class="wordmark__sub">Learn to live well</span>
+    </a>
+    <nav class="site-nav">
+      <a href="/session.html" class="nav-link">Questions</a>
+      <a href="/stories.html" class="nav-link">Stories</a>
+      <a href="/dialogue.html" class="nav-link nav-link--active">Think it through</a>
+      <a href="/path.html" class="nav-link">Your path</a>
+    </nav>
+  </div>
+</header>
+
+<main class="dialogue-main">
+  <div class="dialogue-content">
+
+    <!-- Entry state -->
+    <div id="state-entry" class="dialogue-entry fade-in">
+      <h2>Think it through</h2>
+      <p>Bring something real from your own life — a situation you're in, a decision you're facing, something that's been sitting with you. This isn't advice. It's a space to think.</p>
+      <textarea class="entry-textarea" id="entry-input" placeholder="What's on your mind?" maxlength="800"></textarea>
+      <button class="btn btn--primary btn--lg" onclick="startDialogue()">
+        <span id="start-btn-text">Start</span>
+        <span id="start-spinner" class="spinner hidden"></span>
+      </button>
+    </div>
+
+    <!-- Chat state -->
+    <div id="state-chat" class="hidden">
+      <div class="chat-container">
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="chat-input" placeholder="Say something…" rows="1"
+            onkeydown="handleKeyDown(event)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">→</button>
+        </div>
+        <div class="chat-footer">
+          <span class="chat-footer__note">Your thinking stays yours.</span>
+          <button class="end-btn" onclick="endSession()">End this conversation</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  let messages = [];
+  let sessionId = null;
+  let isLoading = false;
+
+  const entryPoint = new URLSearchParams(window.location.search).get('from') || 'navigation';
+
+  async function startDialogue() {
+    const text = document.getElementById('entry-input').value.trim();
+    if (!text) { document.getElementById('entry-input').focus(); return; }
+
+    document.getElementById('start-btn-text').classList.add('hidden');
+    document.getElementById('start-spinner').classList.remove('hidden');
+
+    messages = [{ role: 'user', content: text }];
+
+    const reply = await callThinkAPI();
+    if (!reply) {
+      document.getElementById('start-btn-text').classList.remove('hidden');
+      document.getElementById('start-spinner').classList.add('hidden');
+      return;
+    }
+
+    messages.push({ role: 'assistant', content: reply });
+
+    document.getElementById('state-entry').classList.add('hidden');
+    document.getElementById('state-chat').classList.remove('hidden');
+
+    renderMessages();
+  }
+
+  async function sendMessage() {
+    if (isLoading) return;
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+
+    messages.push({ role: 'user', content: text });
+    renderMessages();
+    showTyping();
+
+    const reply = await callThinkAPI();
+    hideTyping();
+
+    if (reply) {
+      messages.push({ role: 'assistant', content: reply });
+      renderMessages();
+    }
+  }
+
+  async function callThinkAPI() {
+    isLoading = true;
+    document.getElementById('send-btn').disabled = true;
+
+    try {
+      const res = await fetch('/api/dialogue/think', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages, sessionId, entryPoint }),
+      });
+
+      if (res.status === 401) { window.location.href = '/'; return null; }
+
+      const data = await res.json();
+      if (!sessionId && data.sessionId) sessionId = data.sessionId;
+      return data.reply || null;
+    } catch (err) {
+      return null;
+    } finally {
+      isLoading = false;
+      document.getElementById('send-btn').disabled = false;
+    }
+  }
+
+  function renderMessages() {
+    const container = document.getElementById('chat-messages');
+    container.innerHTML = '';
+
+    messages.forEach(msg => {
+      const div = document.createElement('div');
+      div.className = `message message--${msg.role}`;
+      div.innerHTML = `<div class="message__bubble">${escapeHtml(msg.content)}</div>`;
+      container.appendChild(div);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function showTyping() {
+    const container = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'message message--assistant';
+    div.id = 'typing-indicator';
+    div.innerHTML = `<div class="typing-indicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function hideTyping() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+    // Auto-resize textarea
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+  }
+
+  async function endSession() {
+    if (sessionId) {
+      try {
+        await fetch('/api/dialogue/think/end', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        });
+      } catch {}
+    }
+    window.location.href = '/session.html';
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>');
+  }
+
+  // Auth check
+  (async function() {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (!data.authenticated) window.location.href = '/';
+    } catch {}
+  })();
+</script>
+
+</body>
+</html>
