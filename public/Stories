@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attune — Stories</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    .stories-main {
+      flex: 1;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .stories-header {
+      max-width: 680px;
+      margin: 0 auto 2rem;
+    }
+
+    .stories-header h1 {
+      font-size: 1.9rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .stories-header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-style: italic;
+    }
+
+    .domain-filter {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+      max-width: 680px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .filter-btn {
+      font-family: var(--font);
+      font-size: 0.85rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: 20px;
+      border: 1px solid var(--border-dark);
+      background: var(--surface);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .filter-btn--active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .stories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .story-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-decoration: none;
+      display: block;
+      position: relative;
+    }
+
+    .story-card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow);
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+
+    .story-card--read {
+      opacity: 0.7;
+    }
+
+    .story-card__domain {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-light);
+      margin-bottom: 0.6rem;
+    }
+
+    .story-card__name {
+      font-size: 1.15rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+      line-height: 1.3;
+    }
+
+    .story-card__context {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .story-card__quote {
+      font-size: 0.9rem;
+      color: var(--text);
+      line-height: 1.6;
+      border-left: 2px solid var(--accent-light);
+      padding-left: 0.75rem;
+    }
+
+    .story-card__read-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--success);
+      background: var(--success-light);
+      padding: 0.2rem 0.5rem;
+      border-radius: 10px;
+    }
+
+    .domain-labels {
+      H: 'Honesty';
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a href="/session.html" class="wordmark">
+      <span class="wordmark__name">Attune</span>
+      <span class="wordmark__sub">Learn to live well</span>
+    </a>
+    <nav class="site-nav">
+      <a href="/session.html" class="nav-link">Questions</a>
+      <a href="/stories.html" class="nav-link nav-link--active">Stories</a>
+      <a href="/dialogue.html" class="nav-link">Think it through</a>
+      <a href="/path.html" class="nav-link">Your path</a>
+    </nav>
+  </div>
+</header>
+
+<main class="stories-main">
+  <div class="stories-header">
+    <h1>People who lived it</h1>
+    <p>Real stories of people who faced hard choices — and what they did.</p>
+  </div>
+
+  <div class="domain-filter" id="domain-filter">
+    <button class="filter-btn filter-btn--active" onclick="filterDomain('all', this)">All</button>
+    <button class="filter-btn" onclick="filterDomain('H', this)">Honesty</button>
+    <button class="filter-btn" onclick="filterDomain('Co', this)">Courage</button>
+    <button class="filter-btn" onclick="filterDomain('Fa', this)">Fairness</button>
+    <button class="filter-btn" onclick="filterDomain('Re', this)">Restraint</button>
+    <button class="filter-btn" onclick="filterDomain('Hu', this)">Humility</button>
+    <button class="filter-btn" onclick="filterDomain('Ca', this)">Care for others</button>
+  </div>
+
+  <div id="state-loading" class="text-center mt-4">
+    <div class="spinner" style="margin: 0 auto;"></div>
+  </div>
+
+  <div class="stories-grid" id="stories-grid"></div>
+</main>
+
+<script>
+  const DOMAIN_LABELS = {
+    H: 'Honesty', Co: 'Courage', Fa: 'Fairness',
+    Re: 'Restraint', Hu: 'Humility', Ca: 'Care for others'
+  };
+
+  let allStories = [];
+  let currentFilter = 'all';
+
+  async function loadStories() {
+    try {
+      const res = await fetch('/api/stories');
+      if (res.status === 401) { window.location.href = '/'; return; }
+      const data = await res.json();
+      allStories = data.stories;
+      document.getElementById('state-loading').classList.add('hidden');
+      renderStories();
+    } catch (err) {
+      document.getElementById('state-loading').innerHTML =
+        '<p class="text-muted">Could not load stories. Try refreshing.</p>';
+    }
+  }
+
+  function renderStories() {
+    const grid = document.getElementById('stories-grid');
+    const filtered = currentFilter === 'all'
+      ? allStories
+      : allStories.filter(s => s.domain === currentFilter);
+
+    grid.innerHTML = '';
+    filtered.forEach(story => {
+      const card = document.createElement('a');
+      card.href = `/story.html?id=${story.id}`;
+      card.className = 'story-card' + (story.read ? ' story-card--read' : '');
+      card.innerHTML = `
+        ${story.read ? '<span class="story-card__read-badge">Read</span>' : ''}
+        <div class="story-card__domain">${DOMAIN_LABELS[story.domain] || story.domain}</div>
+        <div class="story-card__name">${story.personName}</div>
+        <div class="story-card__context">${story.context}</div>
+        <div class="story-card__quote">${story.pullQuote}</div>
+      `;
+      grid.appendChild(card);
+    });
+
+    if (filtered.length === 0) {
+      grid.innerHTML = '<p class="text-muted" style="grid-column:1/-1">No stories found.</p>';
+    }
+  }
+
+  function filterDomain(domain, btn) {
+    currentFilter = domain;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('filter-btn--active'));
+    btn.classList.add('filter-btn--active');
+    renderStories();
+  }
+
+  loadStories();
+</script>
+
+</body>
+</html>
