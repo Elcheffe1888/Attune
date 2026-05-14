@@ -6,211 +6,277 @@
   <title>Attune — Think it through</title>
   <link rel="stylesheet" href="/css/main.css">
   <style>
+    /* ── Page shell ─────────────────────────────────────────────────────── */
+    .dialogue-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
     .dialogue-main {
       flex: 1;
-      padding: 2.5rem 1.5rem;
       display: flex;
       justify-content: center;
+      align-items: flex-start;
+      padding: 2.5rem 1.5rem;
     }
 
-    .dialogue-content {
+    .dialogue-container {
       width: 100%;
-      max-width: 600px;
+      max-width: 620px;
     }
 
-    /* Entry state */
-    .dialogue-entry h2 {
-      font-size: 1.6rem;
-      margin-bottom: 0.75rem;
+    /* ── Shared state visibility ─────────────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    /* ── State: Start ────────────────────────────────────────────────────── */
+    .start-header {
+      margin-bottom: 2rem;
     }
 
-    .dialogue-entry p {
+    .start-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
       color: var(--text-muted);
-      margin-bottom: 1.5rem;
-      line-height: 1.7;
+      margin-bottom: 0.5rem;
     }
 
-    .entry-textarea {
+    .start-title {
+      font-size: 2rem;
+      font-weight: 500;
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+
+    .start-subtitle {
+      font-size: 1rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .start-form {
+      margin-top: 2rem;
+    }
+
+    .start-textarea {
       width: 100%;
-      font-family: var(--font);
+      min-height: 140px;
+      padding: 1rem;
+      font-family: inherit;
       font-size: 1rem;
       line-height: 1.7;
-      padding: 0.9rem 1rem;
-      background: var(--surface);
-      border: 1px solid var(--border-dark);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       color: var(--text);
       resize: vertical;
-      min-height: 120px;
+      box-sizing: border-box;
+      transition: border-color 0.15s;
+    }
+
+    .start-textarea:focus {
       outline: none;
-      transition: border-color 0.15s, box-shadow 0.15s;
-      margin-bottom: 1rem;
-    }
-
-    .entry-textarea:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(74,124,142,0.12);
     }
 
-    /* Chat interface */
-    .chat-container {
+    .start-textarea::placeholder {
+      color: var(--text-light);
+    }
+
+    .start-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.75rem;
+    }
+
+    .char-count {
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+
+    .char-count.warn {
+      color: var(--accent);
+    }
+
+    /* ── State: Chat ─────────────────────────────────────────────────────── */
+    .chat-header {
+      padding-bottom: 1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chat-header__title {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .chat-thread {
       display: flex;
       flex-direction: column;
-      height: calc(100vh - 140px);
-    }
-
-    .chat-messages {
-      flex: 1;
+      gap: 1rem;
+      min-height: 200px;
+      max-height: 60vh;
       overflow-y: auto;
-      padding: 0.5rem 0;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
+      padding: 0.25rem 0 1.5rem;
+      scroll-behavior: smooth;
     }
 
-    .message {
-      max-width: 85%;
-      animation: fadeIn 0.25s ease;
-    }
-
-    .message--user {
-      align-self: flex-end;
-    }
-
-    .message--assistant {
-      align-self: flex-start;
-    }
-
-    .message__bubble {
-      padding: 0.8rem 1.1rem;
+    /* ── Chat bubbles ────────────────────────────────────────────────────── */
+    .chat-bubble {
+      max-width: 88%;
+      padding: 0.85rem 1.1rem;
       border-radius: var(--radius-lg);
-      font-size: 0.95rem;
-      line-height: 1.65;
+      font-size: 1rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
     }
 
-    .message--user .message__bubble {
+    .chat-bubble--user {
+      align-self: flex-end;
       background: var(--accent);
-      color: #fff;
+      color: white;
       border-bottom-right-radius: 4px;
     }
 
-    .message--assistant .message__bubble {
-      background: var(--surface);
-      border: 1px solid var(--border);
+    .chat-bubble--assistant {
+      align-self: flex-start;
+      background: var(--surface-2);
       color: var(--text);
       border-bottom-left-radius: 4px;
     }
 
+    /* ── Typing indicator ────────────────────────────────────────────────── */
+    .chat-typing {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0.85rem 1.1rem;
+    }
+
+    .chat-typing span {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background: var(--text-light);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+
+    .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30%           { transform: translateY(-6px); }
+    }
+
+    /* ── Chat input row ──────────────────────────────────────────────────── */
     .chat-input-row {
       display: flex;
-      gap: 0.5rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
+      gap: 0.6rem;
+      align-items: flex-end;
       margin-top: 1rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
     }
 
     .chat-input {
       flex: 1;
-      font-family: var(--font);
-      font-size: 0.95rem;
+      min-height: 44px;
+      max-height: 120px;
       padding: 0.65rem 0.9rem;
-      background: var(--surface);
-      border: 1px solid var(--border-dark);
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       color: var(--text);
-      outline: none;
       resize: none;
-      min-height: 42px;
-      max-height: 120px;
+      box-sizing: border-box;
       transition: border-color 0.15s;
     }
 
     .chat-input:focus {
+      outline: none;
       border-color: var(--accent);
     }
 
-    .send-btn {
-      flex-shrink: 0;
-      width: 42px;
-      height: 42px;
-      border-radius: var(--radius);
-      border: none;
-      background: var(--accent);
-      color: #fff;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s;
-      font-size: 1rem;
+    .chat-input::placeholder {
+      color: var(--text-light);
     }
 
-    .send-btn:hover { background: var(--accent-dark); }
-    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .chat-footer {
+    .chat-input-meta {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: center;
-      margin-top: 0.75rem;
+      margin-top: 0.4rem;
     }
 
-    .chat-footer__note {
-      font-size: 0.78rem;
-      color: var(--text-light);
-      font-style: italic;
+    /* ── End session button ──────────────────────────────────────────────── */
+    .end-session-wrap {
+      margin-top: 1.5rem;
+      text-align: center;
     }
 
-    /* Typing indicator */
-    .typing-indicator {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-      padding: 0.8rem 1.1rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      border-bottom-left-radius: 4px;
-      width: fit-content;
-    }
-
-    .typing-dot {
-      width: 6px;
-      height: 6px;
-      background: var(--text-light);
-      border-radius: 50%;
-      animation: typingDot 1.2s infinite;
-    }
-
-    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes typingDot {
-      0%, 60%, 100% { opacity: 0.3; transform: scale(1); }
-      30% { opacity: 1; transform: scale(1.2); }
-    }
-
-    /* End session */
-    .end-btn {
-      font-size: 0.82rem;
-      color: var(--text-light);
+    .btn--ghost {
       background: none;
-      border: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.55rem 1.25rem;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 0.9rem;
       cursor: pointer;
-      font-family: var(--font);
-      padding: 0.2rem 0;
-      text-decoration: underline;
-      text-decoration-color: transparent;
-      transition: color 0.15s, text-decoration-color 0.15s;
+      transition: border-color 0.15s, color 0.15s;
     }
 
-    .end-btn:hover {
+    .btn--ghost:hover {
+      border-color: var(--text-muted);
+      color: var(--text);
+    }
+
+    /* ── State: Closure ──────────────────────────────────────────────────── */
+    .closure-wrap {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+
+    .closure-mark {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .closure-title {
+      font-size: 1.5rem;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+
+    .closure-body {
+      font-size: 1rem;
       color: var(--text-muted);
-      text-decoration-color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 400px;
+      margin: 0 auto 2rem;
+    }
+
+    .closure-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
     }
   </style>
 </head>
-<body style="min-height:100vh;display:flex;flex-direction:column;">
+<body class="dialogue-page">
 
 <header class="site-header">
   <div class="site-header__inner">
@@ -228,31 +294,86 @@
 </header>
 
 <main class="dialogue-main">
-  <div class="dialogue-content">
+  <div class="dialogue-container">
 
-    <!-- Entry state -->
-    <div id="state-entry" class="dialogue-entry fade-in">
-      <h2>Think it through</h2>
-      <p>Bring something real from your own life — a situation you're in, a decision you're facing, something that's been sitting with you. This isn't advice. It's a space to think.</p>
-      <textarea class="entry-textarea" id="entry-input" placeholder="What's on your mind?" maxlength="800"></textarea>
-      <button class="btn btn--primary btn--lg" onclick="startDialogue()">
-        <span id="start-btn-text">Start</span>
-        <span id="start-spinner" class="spinner hidden"></span>
-      </button>
+    <!-- ── State: Start ───────────────────────────────────────────────── -->
+    <div id="state-start">
+      <div class="start-header">
+        <div class="start-label">Think it through</div>
+        <h1 class="start-title">What's going on?</h1>
+        <p class="start-subtitle">
+          Describe a real situation you're in. Something that already happened,
+          something you're deciding right now, or something coming up.<br>
+          <em>No right answer. Just thinking.</em>
+        </p>
+      </div>
+
+      <div class="start-form">
+        <textarea
+          id="start-input"
+          class="start-textarea"
+          placeholder="What's going on?"
+          maxlength="1000"
+          rows="5"
+        ></textarea>
+        <div class="start-footer">
+          <span class="char-count"><span id="start-char-left">1000</span> characters left</span>
+          <button id="start-send" class="btn btn--primary">Let's think through it</button>
+        </div>
+      </div>
     </div>
 
-    <!-- Chat state -->
+    <!-- ── State: Chat ────────────────────────────────────────────────── -->
     <div id="state-chat" class="hidden">
-      <div class="chat-container">
-        <div class="chat-messages" id="chat-messages"></div>
-        <div class="chat-input-row">
-          <textarea class="chat-input" id="chat-input" placeholder="Say something…" rows="1"
-            onkeydown="handleKeyDown(event)"></textarea>
-          <button class="send-btn" id="send-btn" onclick="sendMessage()">→</button>
-        </div>
-        <div class="chat-footer">
-          <span class="chat-footer__note">Your thinking stays yours.</span>
-          <button class="end-btn" onclick="endSession()">End this conversation</button>
+      <div class="chat-header">
+        <span class="chat-header__title">Think it through</span>
+      </div>
+
+      <div id="chat-thread" class="chat-thread" aria-live="polite" aria-label="Conversation">
+        <!-- Bubbles injected here by dialogue.js -->
+      </div>
+
+      <div class="chat-input-row">
+        <textarea
+          id="chat-input"
+          class="chat-input"
+          placeholder="Keep going…"
+          maxlength="500"
+          rows="2"
+          aria-label="Your response"
+        ></textarea>
+        <button id="chat-send" class="btn btn--primary">Send</button>
+      </div>
+
+      <div class="chat-input-meta">
+        <span class="char-count"><span id="chat-char-left">500</span> left</span>
+      </div>
+
+      <!-- Shown after 4 exchanges -->
+      <div class="end-session-wrap">
+        <button
+          id="end-session-btn"
+          class="btn--ghost hidden"
+          onclick="endSession()"
+        >
+          Done thinking
+        </button>
+      </div>
+    </div>
+
+    <!-- ── State: Closure ─────────────────────────────────────────────── -->
+    <div id="state-closure" class="hidden">
+      <div class="closure-wrap fade-in">
+        <div class="closure-mark">—</div>
+        <h2 class="closure-title">Good thinking.</h2>
+        <p class="closure-body">
+          Working through something real is harder than it looks.
+          Whatever you figured out — or didn't — that's what this is for.
+        </p>
+        <div class="closure-actions">
+          <a href="/session.html" class="btn btn--secondary">Back to questions</a>
+          <a href="/stories.html" class="btn btn--secondary">Read a story</a>
+          <a href="/dialogue.html" class="btn btn--primary">Think through something else</a>
         </div>
       </div>
     </div>
@@ -260,156 +381,7 @@
   </div>
 </main>
 
-<script>
-  let messages = [];
-  let sessionId = null;
-  let isLoading = false;
-
-  const entryPoint = new URLSearchParams(window.location.search).get('from') || 'navigation';
-
-  async function startDialogue() {
-    const text = document.getElementById('entry-input').value.trim();
-    if (!text) { document.getElementById('entry-input').focus(); return; }
-
-    document.getElementById('start-btn-text').classList.add('hidden');
-    document.getElementById('start-spinner').classList.remove('hidden');
-
-    messages = [{ role: 'user', content: text }];
-
-    const reply = await callThinkAPI();
-    if (!reply) {
-      document.getElementById('start-btn-text').classList.remove('hidden');
-      document.getElementById('start-spinner').classList.add('hidden');
-      return;
-    }
-
-    messages.push({ role: 'assistant', content: reply });
-
-    document.getElementById('state-entry').classList.add('hidden');
-    document.getElementById('state-chat').classList.remove('hidden');
-
-    renderMessages();
-  }
-
-  async function sendMessage() {
-    if (isLoading) return;
-    const input = document.getElementById('chat-input');
-    const text = input.value.trim();
-    if (!text) return;
-
-    input.value = '';
-    input.style.height = 'auto';
-
-    messages.push({ role: 'user', content: text });
-    renderMessages();
-    showTyping();
-
-    const reply = await callThinkAPI();
-    hideTyping();
-
-    if (reply) {
-      messages.push({ role: 'assistant', content: reply });
-      renderMessages();
-    }
-  }
-
-  async function callThinkAPI() {
-    isLoading = true;
-    document.getElementById('send-btn').disabled = true;
-
-    try {
-      const res = await fetch('/api/dialogue/think', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages, sessionId, entryPoint }),
-      });
-
-      if (res.status === 401) { window.location.href = '/'; return null; }
-
-      const data = await res.json();
-      if (!sessionId && data.sessionId) sessionId = data.sessionId;
-      return data.reply || null;
-    } catch (err) {
-      return null;
-    } finally {
-      isLoading = false;
-      document.getElementById('send-btn').disabled = false;
-    }
-  }
-
-  function renderMessages() {
-    const container = document.getElementById('chat-messages');
-    container.innerHTML = '';
-
-    messages.forEach(msg => {
-      const div = document.createElement('div');
-      div.className = `message message--${msg.role}`;
-      div.innerHTML = `<div class="message__bubble">${escapeHtml(msg.content)}</div>`;
-      container.appendChild(div);
-    });
-
-    container.scrollTop = container.scrollHeight;
-  }
-
-  function showTyping() {
-    const container = document.getElementById('chat-messages');
-    const div = document.createElement('div');
-    div.className = 'message message--assistant';
-    div.id = 'typing-indicator';
-    div.innerHTML = `<div class="typing-indicator">
-      <div class="typing-dot"></div>
-      <div class="typing-dot"></div>
-      <div class="typing-dot"></div>
-    </div>`;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-  }
-
-  function hideTyping() {
-    const el = document.getElementById('typing-indicator');
-    if (el) el.remove();
-  }
-
-  function handleKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-    // Auto-resize textarea
-    e.target.style.height = 'auto';
-    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-  }
-
-  async function endSession() {
-    if (sessionId) {
-      try {
-        await fetch('/api/dialogue/think/end', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId }),
-        });
-      } catch {}
-    }
-    window.location.href = '/session.html';
-  }
-
-  function escapeHtml(str) {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/\n/g, '<br>');
-  }
-
-  // Auth check
-  (async function() {
-    try {
-      const res = await fetch('/api/auth/me');
-      const data = await res.json();
-      if (!data.authenticated) window.location.href = '/';
-    } catch {}
-  })();
-</script>
+<script src="/js/dialogue.js"></script>
 
 </body>
 </html>
