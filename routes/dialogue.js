@@ -3,13 +3,42 @@ import Anthropic from '@anthropic-ai/sdk';
 import { pool } from '../server.js';
 import { requireAuth } from '../server.js';
 import { L3_CONFLICTS } from '../content/situations.js';
+import { STORIES } from '../content/stories.js';
 
 const router = Router();
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// ── System prompts ─────────────────────────────────────────────────────────
+// ── Domain label map ───────────────────────────────────────────────────────
+// Maps the short domain key used in story objects to the plain-language label
+// used in the system prompt context line. Adjust keys if your stories.js uses
+// different abbreviations (e.g. 'Ca' vs 'C' for Care for others).
+const DOMAIN_LABELS = {
+  H:  'honesty',
+  Co: 'courage',
+  Fa: 'fairness',
+  Re: 'restraint',
+  Hu: 'humility',
+  Ca: 'care for others',
+};
 
-const TIT_SYSTEM_PROMPT = `You are a thinking partner helping a teenager work through a real situation from their own life. You are not a therapist, a teacher, or an advice-giver.
+// ── Helper — resolve domain label from story ID ────────────────────────────
+// Returns a plain-language string like "honesty" or null if not found.
+// If a story has multiple domains (e.g. Fred Rogers: Co + Hu), takes the first.
+function getStoryDomain(storyId) {
+  if (!storyId || !STORIES) return null;
+  const story = STORIES.find(s => s.id === storyId);
+  if (!story) return null;
+
+  // Support domain as string ('H'), array (['Co', 'Hu']), or full label ('honesty')
+  let raw = story.domain || story.domains || null;
+  if (!raw) return null;
+  if (Array.isArray(raw)) raw = raw[0];               // take primary domain
+  return DOMAIN_LABELS[raw] || raw;                   // map short key → label, or pass through
+}
+
+// ── Base system prompts ────────────────────────────────────────────────────
+
+const TIT_BASE_PROMPT = `You are a thinking partner helping a teenager work through a real situation from their own life. You are not a therapist, a teacher, or an advice-giver.
 
 Your job is to help them think more clearly — not to tell them what to do.
 
@@ -22,6 +51,8 @@ Rules you must follow without exception:
 - One question per response, maximum
 - Under 80 words per response
 - Acknowledge what they said before asking the next question
+
+Opening: Do not begin with a question. Begin by naming what you heard in one or two sentences. Then ask one question.
 
 If they describe abuse, self-harm, or danger: stop the dialogue and respond only with: "What you're describing sounds serious. Please talk to a trusted adult or contact a crisis line."
 
@@ -43,19 +74,40 @@ Acknowledge specifically what they worked out. Name it in their own language. As
 
 If they describe abuse, self-harm, or danger: stop immediately with: "What you're describing sounds serious. Please talk to a trusted adult."`;
 
+// ── Build story-aware TIT prompt ───────────────────────────────────────────
+// Only appends context when entry is 'post_story' AND a valid storyId is given.
+// The context block instructs the model NOT to reference the story directly —
+// it is silent orientation only.
+function buildTitPrompt(entryPoint, storyId) {
+  if (entryPoint !== 'post_story' || !storyId) return TIT_BASE_PROMPT;
+
+  const domain = getStoryDomain(storyId);
+  if (!domain) return TIT_BASE_PROMPT;
+
+  return `${TIT_BASE_PROMPT}
+
+Context (do not reference directly): The learner has just read a story about ${domain}. This domain may be active for them. Do not mention the story. Do not guide them toward it. If they bring a situation that touches ${domain}, you are already oriented — follow their lead, not the story's logic.`;
+}
+
 // ── POST /api/dialogue/think ───────────────────────────────────────────────
 // Think it through — open-ended dialogue about learner's own situation.
-// Body: { messages: [{role, content}], sessionId?, entryPoint? }
+// Body: { messages: [{role, content}], sessionId?, entryPoint?, storyId? }
 router.post('/think', requireAuth, async (req, res) => {
   const userId = req.session.userId;
-  const { messages, sessionId, entryPoint } = req.body;
+  const { messages, sessionId, entryPoint, storyId } = req.body;
 
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages array required' });
   }
 
+  // Trim history to 20 turns max (spec: preserve most recent 20)
+  const trimmedMessages = messages.length > 20
+    ? messages.slice(messages.length - 20)
+    : messages;
+
   try {
-    // Create or update TIT session record
+    let activeSessionId = sessionId;
+
     if (sessionId) {
       await pool.query(
         `UPDATE tit_sessions SET exchange_count = exchange_count + 1
@@ -63,27 +115,30 @@ router.post('/think', requireAuth, async (req, res) => {
         [sessionId, userId]
       );
     } else {
-      // First message — create session record, return id
+      // First message — create session record
       const result = await pool.query(
         `INSERT INTO tit_sessions (user_id, entry_point, exchange_count)
          VALUES ($1, $2, 1) RETURNING id`,
         [userId, entryPoint || 'navigation']
       );
-      req._newTitSessionId = result.rows[0].id;
+      activeSessionId = result.rows[0].id;
     }
+
+    // Build prompt — story-aware only when entry_point is post_story
+    const systemPrompt = buildTitPrompt(entryPoint, storyId);
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 300,
-      system: TIT_SYSTEM_PROMPT,
-      messages,
+      system: systemPrompt,
+      messages: trimmedMessages,
     });
 
     const reply = response.content.find(b => b.type === 'text')?.text || '';
 
     return res.json({
       reply,
-      sessionId: req._newTitSessionId || sessionId,
+      sessionId: activeSessionId,
     });
   } catch (err) {
     console.error('Think it through error:', err);
@@ -93,6 +148,7 @@ router.post('/think', requireAuth, async (req, res) => {
 
 // ── POST /api/dialogue/think/end ──────────────────────────────────────────
 // Mark a Think it through session as completed.
+// Body: { sessionId }
 router.post('/think/end', requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { sessionId } = req.body;
@@ -127,7 +183,7 @@ router.get('/l3/available', requireAuth, async (req, res) => {
       kcResult.rows.filter(r => r.mastered).map(r => r.kc_id)
     );
 
-    // Check recent L3 engagements — don't resurface within 90 days
+    // Don't resurface L3 pairs completed within the last 90 days
     const recentL3 = await pool.query(
       `SELECT conflict_pair FROM l3_engagements
        WHERE user_id = $1 AND completed = TRUE
@@ -165,11 +221,15 @@ router.post('/l3', requireAuth, async (req, res) => {
     return res.status(404).json({ error: 'Conflict pair not found' });
   }
 
+  // Trim history to 20 turns max
+  const trimmedMessages = messages.length > 20
+    ? messages.slice(messages.length - 20)
+    : messages;
+
   try {
     let activeEngagementId = engagementId;
 
     if (!engagementId) {
-      // Start new engagement
       const result = await pool.query(
         `INSERT INTO l3_engagements (user_id, conflict_pair, exchange_count)
          VALUES ($1, $2, 1) RETURNING id`,
@@ -184,7 +244,7 @@ router.post('/l3', requireAuth, async (req, res) => {
       );
     }
 
-    // Build system prompt with conflict setup injected
+    // Inject the specific conflict setup into the system prompt
     const systemWithSetup = `${L3_SYSTEM_PROMPT}
 
 The specific situation the learner is thinking through:
@@ -194,7 +254,7 @@ ${conflict.setup}`;
       model: 'claude-sonnet-4-6',
       max_tokens: 300,
       system: systemWithSetup,
-      messages,
+      messages: trimmedMessages,
     });
 
     const reply = response.content.find(b => b.type === 'text')?.text || '';
@@ -214,6 +274,7 @@ ${conflict.setup}`;
 
 // ── POST /api/dialogue/l3/end ─────────────────────────────────────────────
 // Mark an L3 engagement as completed.
+// Body: { engagementId, bothSidesNamed }
 router.post('/l3/end', requireAuth, async (req, res) => {
   const userId = req.session.userId;
   const { engagementId, bothSidesNamed } = req.body;
